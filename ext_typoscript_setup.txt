@@ -16,8 +16,10 @@ plugin.tx_aovehicles_pi1 {
 	common {
 		currencyWrap.wrap = | &nbsp;&#8364;
 		cubicCapacityWrap.wrap = | &nbsp;cm³
-		powerWrap.wrap = | &nbsp;Kw
+		powerWrapKW.wrap = | &nbsp;KW
+		powerWrapPS.wrap = &nbsp;( | &nbsp;PS)
 		mileageWrap.wrap = | &nbsp;Km
+		noResultWrap.wrap = <p> | </p>
 	}
 
 	# List view settings

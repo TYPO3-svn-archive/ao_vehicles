@@ -40,8 +40,6 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 	 * [Put your description here]
 	 */
 	function main($content,$conf) {
-		$this->enableFields = $this->cObj->enableFields("tx_aovehicles_vehicles");
-
 		switch((string)$conf["CMD"]) {
 			case "singleView":
 				list($t) = explode(":",$this->cObj->currentRecord);
@@ -61,7 +59,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 		if ( DEBUG ){
 			//debug ( $this->conf );
 			//debug ( $this->piVars );
-			//debug ( $this->enableFields );
+			//debug ( str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') ) );
 		}
 		return $out;
 	}
@@ -73,7 +71,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 		$this->conf=$conf;		// Setting the TypoScript passed to this function in $this->conf
 		$this->pi_setPiVarDefaults();
 		$this->pi_loadLL();		// Loading the LOCAL_LANG values
-		$this->pi_USER_INT_obj=1;	// Configuring so caching is not expected. This value means that no cHash params are ever set. We do this, because it's a USER_INT object!
+		//$this->pi_USER_INT_obj=1;	// Configuring so caching is not expected. This value means that no cHash params are ever set. We do this, because it's a USER_INT object!
 		$lConf = $this->conf["listView."];	// Local settings for the listView function
 
 		if ($this->piVars["showUid"]) {	// If a single element should be displayed:
@@ -115,7 +113,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 									JOIN tx_aovehicles_fuel i ON a.fuel = i.uid
 									JOIN tx_aovehicles_seats j ON a.seats = j.uid
 									';
-			$queryParts['WHERE'] = sprintf ( 'a.uid = %s', $this->piVars["showUid"] );
+			$queryParts['WHERE'] = sprintf ( 'a.uid = %s%s', $this->piVars['showUid'], str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') ) );
 			$queryParts['GROUPBY'] = '';
 			$queryParts['ORDERBY'] = '';
 			$queryParts['LIMIT'] = '';
@@ -128,6 +126,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 														$queryParts['LIMIT']
 													);
 			$this->internal["currentRow"] = $GLOBALS['TYPO3_DB']->sql_fetch_assoc( $res );
+			$this->internal["res_count"] = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
 			$content = $this->singleView($content,$conf);
 			return $content;
 		} else {
@@ -188,7 +187,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 									JOIN tx_aovehicles_fuel i ON a.fuel = i.uid
 									JOIN tx_aovehicles_seats j ON a.seats = j.uid
 									';
-			$queryParts['WHERE'] = '';
+			$queryParts['WHERE'] = substr ( str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') ), 5 );
 			$queryParts['GROUPBY'] = '';
 			$queryParts['ORDERBY'] = 'a.tstamp ASC';
 			$queryParts['LIMIT'] = '';
@@ -200,9 +199,8 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 														$queryParts['ORDERBY'],
 														$queryParts['LIMIT']
 													);
-
 			$this->internal["currentTable"] = "tx_aovehicles_vehicles";
-
+			$this->internal["res_count"] = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
 				// Put the whole list together:
 			$fullTable="";	// Clear var;
 			//$fullTable.=t3lib_div::view_array($this->piVars);	// DEBUG: Output the content of $this->piVars for debug purposes. REMEMBER to comment out the IP-lock in the debug() function in t3lib/config_default.php if nothing happens when you un-comment this line!
@@ -211,8 +209,11 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 			// $fullTable.=$this->pi_list_modeSelector($items);
 
 			// Adds the whole list table
-			$fullTable.=$this->makelist($res);
-
+			if ( $this->internal['res_count'] > 0 ) {
+				$fullTable.=$this->makelist($res);
+			}else{
+				$fullTable .= $this->cObj->stdWrap ( $this->pi_getLL ( 'noResult' ), $this->conf['common.']['noResultWrap.'] );
+			}
 			// Adds the search box:
 			// $fullTable.=$this->pi_list_searchBox();
 
@@ -275,50 +276,54 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 		$this->pi_getEditPanel();
 		*/
 
-		$head = $this->cObj->stdWrap ( sprintf ( '%s %s', $this->getFieldContent ( 'brand' ), $this->getFieldContent ( 'model' ) ), $this->conf['singleView.']['titleWrap.'] );
 		$out = '';
-		$this->templateCode = $this->cObj->fileResource ( $this->conf['templateFile'] );
-		$template = $this->cObj->getSubpart ( $this->templateCode, '###SINGLE_VIEW###' );
-		$markerArray = array();
-		$markerArray['###image###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'image' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_type###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'type' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###type###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'type' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_body###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'body' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###body###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'body' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_price###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'price' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###price###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'price' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_initial_registration###']	= $this->cObj->stdWrap ($this->getFieldHeader ( 'initial_registration' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###initial_registration###']			= $this->cObj->stdWrap ($this->getFieldContent ( 'initial_registration' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_mileage###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'mileage' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###mileage###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'mileage' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_cubic_capacity###']			= $this->cObj->stdWrap ($this->getFieldHeader ( 'cubic_capacity' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###cubic_capacity###']				= $this->cObj->stdWrap ($this->getFieldContent ( 'cubic_capacity' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_power###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'power' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###power###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'power' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_gears###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'gears' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###gears###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'gears' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_seats###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'seats' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###seats###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'seats' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_doors###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'doors' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###doors###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'doors' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_gear_shift###']				= $this->cObj->stdWrap ($this->getFieldHeader ( 'gear_shift' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###gear_shift###']					= $this->cObj->stdWrap ($this->getFieldContent ( 'gear_shift' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_colour###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'colour' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###colour###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'colour' ).$metallic, $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_fuel###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'fuel' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###fuel###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'fuel' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_notes###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'notes' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###notes###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'notes' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_contact###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'contact' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###contact###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'contact' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_equipment###']				= $this->cObj->stdWrap ($this->getFieldHeader ( 'equipment' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###equipment###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'equipment' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_tstamp###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'tstamp' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###tstamp###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'date_updated' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$markerArray['###label_crdate###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'crdate' ), $this->conf['singleView.']['cellHeadWrap.'] );
-		$markerArray['###crdate###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'date_added' ), $this->conf['singleView.']['cellDataWrap.'] );
-		$out = $this->cObj->stdWrap ($this->cObj->substituteMarkerArrayCached ( $template, $markerArray ), $this->conf['singleView.']['resultWrap.'] );
-		$out .= $this->cObj->stdWrap ( $this->pi_list_linkSingle ( $this->pi_getLL ( 'back', 'Back' ),0 ), $this->conf['singleView.']['backLinkWrap.'] );
+		if ( $this->internal['res_count'] > 0 ) {
+			$head = $this->cObj->stdWrap ( sprintf ( '%s %s', $this->getFieldContent ( 'brand' ), $this->getFieldContent ( 'model' ) ), $this->conf['singleView.']['titleWrap.'] );
+			$this->templateCode = $this->cObj->fileResource ( $this->conf['templateFile'] );
+			$template = $this->cObj->getSubpart ( $this->templateCode, '###SINGLE_VIEW###' );
+			$markerArray = array();
+			$markerArray['###image###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'image' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_type###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'type' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###type###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'type' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_body###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'body' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###body###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'body' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_price###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'price' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###price###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'price' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_initial_registration###']	= $this->cObj->stdWrap ($this->getFieldHeader ( 'initial_registration' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###initial_registration###']			= $this->cObj->stdWrap ($this->getFieldContent ( 'initial_registration' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_mileage###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'mileage' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###mileage###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'mileage' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_cubic_capacity###']			= $this->cObj->stdWrap ($this->getFieldHeader ( 'cubic_capacity' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###cubic_capacity###']				= $this->cObj->stdWrap ($this->getFieldContent ( 'cubic_capacity' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_power###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'power' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###power###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'power' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_gears###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'gears' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###gears###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'gears' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_seats###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'seats' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###seats###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'seats' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_doors###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'doors' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###doors###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'doors' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_gear_shift###']				= $this->cObj->stdWrap ($this->getFieldHeader ( 'gear_shift' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###gear_shift###']					= $this->cObj->stdWrap ($this->getFieldContent ( 'gear_shift' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_colour###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'colour' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###colour###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'colour' ).$metallic, $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_fuel###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'fuel' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###fuel###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'fuel' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_notes###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'notes' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###notes###']							= $this->cObj->stdWrap ($this->getFieldContent ( 'notes' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_contact###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'contact' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###contact###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'contact' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_equipment###']				= $this->cObj->stdWrap ($this->getFieldHeader ( 'equipment' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###equipment###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'equipment' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_tstamp###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'tstamp' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###tstamp###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'date_updated' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$markerArray['###label_crdate###']					= $this->cObj->stdWrap ($this->getFieldHeader ( 'crdate' ), $this->conf['singleView.']['cellHeadWrap.'] );
+			$markerArray['###crdate###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'date_added' ), $this->conf['singleView.']['cellDataWrap.'] );
+			$out = $this->cObj->stdWrap ($this->cObj->substituteMarkerArrayCached ( $template, $markerArray ), $this->conf['singleView.']['resultWrap.'] );
+		}else{
+			$out = $this->cObj->stdWrap ( $this->pi_getLL ( 'noResult' ), $this->conf['common.']['noResultWrap.'] );
+		}
+		$out .= $this->cObj->stdWrap ( $this->pi_list_linkSingle ( $this->pi_getLL ( 'back' ),0 ), $this->conf['singleView.']['backLinkWrap.'] );
 		$out = $head . $out;
 		$out .= $this->pi_getEditPanel();
 		return $out;
@@ -345,7 +350,9 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 				return $this->cObj->stdWrap ( $this->internal["currentRow"][$fN], $this->conf['common.']['mileageWrap.'] );
 			break;
 			case 'power':
-				return $this->cObj->stdWrap ( $this->internal["currentRow"][$fN], $this->conf['common.']['powerWrap.'] );
+				$power = $this->cObj->stdWrap ( $this->internal["currentRow"][$fN], $this->conf['common.']['powerWrapKW.'] );
+				$power .= $this->cObj->stdWrap ( number_format ( $this->internal["currentRow"][$fN] * 1.36, 0, ',', '' ), $this->conf['common.']['powerWrapPS.'] );
+				return $power;
 			break;
 			case 'colour':
 				if ( $this->internal['currentRow']['metallic'] == 1 ) {
@@ -369,28 +376,32 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 				return strftime ( '%d.%m.%Y', $this->date_added );
 			break;
 			case 'equipment':
-				$queryParts['SELECT']	= 'b.equipment AS list_equipment';
-				$queryParts['FROM']		= '
-											tx_aovehicles_vehicles_equipment_mm a
-											JOIN tx_aovehicles_equipment b ON a.uid_foreign = b.uid
-											';
-				$queryParts['WHERE']	= sprintf ( 'a.uid_local = %s', $this->internal['currentRow']['uid'] );
-				$queryParts['GROUPBY']	= '';
-				$queryParts['ORDERBY']	= 'b.equipment ASC';
-				$queryParts['LIMIT']	= '';
+				if ( $this->internal["currentRow"]['list_equipment'] > 0 ) {
+					$queryParts['SELECT']	= 'b.equipment AS list_equipment';
+					$queryParts['FROM']		= '
+												tx_aovehicles_vehicles_equipment_mm a
+												JOIN tx_aovehicles_equipment b ON a.uid_foreign = b.uid
+												';
+					$queryParts['WHERE']	= sprintf ( 'a.uid_local = %s', $this->internal['currentRow']['uid'] );
+					$queryParts['GROUPBY']	= '';
+					$queryParts['ORDERBY']	= 'b.equipment ASC';
+					$queryParts['LIMIT']	= '';
 
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-											$queryParts['SELECT'],
-											$queryParts['FROM'],
-											$queryParts['WHERE'],
-											$queryParts['GROUPBY'],
-											$queryParts['ORDERBY'],
-											$queryParts['LIMIT']
-										);
-				while ( $this->internal["currentRow"] = $GLOBALS['TYPO3_DB']->sql_fetch_assoc( $res ) ) {
-					$items[] = $this->getFieldContent ( 'list_equipment' );
+					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+												$queryParts['SELECT'],
+												$queryParts['FROM'],
+												$queryParts['WHERE'],
+												$queryParts['GROUPBY'],
+												$queryParts['ORDERBY'],
+												$queryParts['LIMIT']
+											);
+					while ( $this->internal["currentRow"] = $GLOBALS['TYPO3_DB']->sql_fetch_assoc( $res ) ) {
+						$items[] = $this->getFieldContent ( 'list_equipment' );
+					}
+					$items = implode ( ', ', $items );
+				}else{
+					$items = '';
 				}
-				$items = implode ( ', ', $items );
 				return $items;
 			break;
 			case 'image':
