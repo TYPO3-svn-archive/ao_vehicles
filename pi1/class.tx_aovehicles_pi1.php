@@ -405,7 +405,10 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 				return $items;
 			break;
 			case 'image':
+				$titleText = sprintf ( '%s %s', $this->getFieldContent ( 'brand' ), $this->getFieldContent ( 'model' ) );
 				$imgCode = $this->conf['vehicleImageCObject.'];
+				$imgCode['titleText'] = $titleText;
+				$imgCode['altText'] = $titleText;
 				$imgCode['file'] = sprintf ( 'uploads/%s/%s', substr ( $this->prefixId, 0, -4 ), $this->internal["currentRow"][$fN] );
 				return $this->cObj->IMAGE ( $imgCode );
 			break;

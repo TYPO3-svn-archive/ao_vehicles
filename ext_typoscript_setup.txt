@@ -50,8 +50,6 @@ plugin.tx_aovehicles_pi1 {
 	#
 	vehicleImageCObject {
 		file.width = 200
-		#altText.data = field:uid
-		#titleText.data = field:uid
 		imageLinkWrap = 1
 		imageLinkWrap {
 			enable = 1
