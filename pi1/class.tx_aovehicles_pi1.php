@@ -102,18 +102,32 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 									a.crdate AS date_added
 									';
 			$queryParts['FROM'] = '
-									tx_aovehicles_vehicles a
-									JOIN tx_aovehicles_type b ON a.type = b.uid
-									JOIN tx_aovehicles_brand c ON a.brand = c.uid
-									JOIN tx_aovehicles_body d ON a.body = d.uid
-									JOIN tx_aovehicles_gears e ON a.gears = e.uid
-									JOIN tx_aovehicles_doors f ON a.doors = f.uid
-									JOIN tx_aovehicles_colour g ON a.colour = g.uid
-									JOIN tx_aovehicles_gear_shift h ON a.gear_shift = h.uid
-									JOIN tx_aovehicles_fuel i ON a.fuel = i.uid
-									JOIN tx_aovehicles_seats j ON a.seats = j.uid
+									tx_aovehicles_vehicles a,
+									tx_aovehicles_type b,
+									tx_aovehicles_brand c,
+									tx_aovehicles_body d,
+									tx_aovehicles_gears e,
+									tx_aovehicles_doors f,
+									tx_aovehicles_colour g,
+									tx_aovehicles_gear_shift h,
+									tx_aovehicles_fuel i,
+									tx_aovehicles_seats j
 									';
-			$queryParts['WHERE'] = sprintf ( 'a.uid = %s%s', $this->piVars['showUid'], str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') ) );
+			$queryParts['WHERE'] = sprintf	(
+											'a.uid = %s AND
+											a.type = b.uid AND
+											a.brand = c.uid AND
+											a.body = d.uid AND
+											a.gears = e.uid AND
+											a.doors = f.uid AND
+											a.colour = g.uid AND
+											a.gear_shift = h.uid AND
+											a.fuel = i.uid AND
+											a.seats = j.uid
+											%s',
+											$this->piVars['showUid'],
+											str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') )
+											);
 			$queryParts['GROUPBY'] = '';
 			$queryParts['ORDERBY'] = '';
 			$queryParts['LIMIT'] = '';
@@ -176,18 +190,30 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 									a.crdate
 									';
 			$queryParts['FROM'] = '
-									tx_aovehicles_vehicles a
-									JOIN tx_aovehicles_type b ON a.type = b.uid
-									JOIN tx_aovehicles_brand c ON a.brand = c.uid
-									JOIN tx_aovehicles_body d ON a.body = d.uid
-									JOIN tx_aovehicles_gears e ON a.gears = e.uid
-									JOIN tx_aovehicles_doors f ON a.doors = f.uid
-									JOIN tx_aovehicles_colour g ON a.colour = g.uid
-									JOIN tx_aovehicles_gear_shift h ON a.gear_shift = h.uid
-									JOIN tx_aovehicles_fuel i ON a.fuel = i.uid
-									JOIN tx_aovehicles_seats j ON a.seats = j.uid
+									tx_aovehicles_vehicles a,
+									tx_aovehicles_type b,
+									tx_aovehicles_brand c,
+									tx_aovehicles_body d,
+									tx_aovehicles_gears e,
+									tx_aovehicles_doors f,
+									tx_aovehicles_colour g,
+									tx_aovehicles_gear_shift h,
+									tx_aovehicles_fuel i,
+									tx_aovehicles_seats j
 									';
-			$queryParts['WHERE'] = substr ( str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') ), 5 );
+			$queryParts['WHERE'] = sprintf (
+									'a.type = b.uid AND
+									a.brand = c.uid AND
+									a.body = d.uid AND
+									a.gears = e.uid AND
+									a.doors = f.uid AND
+									a.colour = g.uid AND
+									a.gear_shift = h.uid AND
+									a.fuel = i.uid AND
+									a.seats = j.uid
+									%s',
+									str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') )
+									);
 			$queryParts['GROUPBY'] = '';
 			$queryParts['ORDERBY'] = 'a.tstamp ASC';
 			$queryParts['LIMIT'] = '';
@@ -379,10 +405,10 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 				if ( $this->internal["currentRow"]['list_equipment'] > 0 ) {
 					$queryParts['SELECT']	= 'b.equipment AS list_equipment';
 					$queryParts['FROM']		= '
-												tx_aovehicles_vehicles_equipment_mm a
-												JOIN tx_aovehicles_equipment b ON a.uid_foreign = b.uid
+												tx_aovehicles_vehicles_equipment_mm a,
+												tx_aovehicles_equipment b
 												';
-					$queryParts['WHERE']	= sprintf ( 'a.uid_local = %s', $this->internal['currentRow']['uid'] );
+					$queryParts['WHERE']	= sprintf ( 'a.uid_local = %s AND a.uid_foreign = b.uid', $this->internal['currentRow']['uid'] );
 					$queryParts['GROUPBY']	= '';
 					$queryParts['ORDERBY']	= 'b.equipment ASC';
 					$queryParts['LIMIT']	= '';
