@@ -2,6 +2,16 @@
 /** $Id$ */
 if (!defined ("TYPO3_MODE")) 	die ("Access denied.");
 
+// Displays all vehicles as a list in the page module
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cms']['db_layout']['addTables'] = Array (
+	'tx_aovehicles_vehicles' => Array (
+		'0' => Array (
+			'fList' => 'type,brand,model',
+			'icon'=>'1',
+		),
+	),
+);
+
 t3lib_extMgm::addToInsertRecords("tx_aovehicles_vehicles");
 
 $TCA["tx_aovehicles_vehicles"] = Array (
@@ -227,9 +237,32 @@ $TCA["tx_aovehicles_equipment"] = Array (
 	)
 );
 
+$tempColumns = Array (
+	"tx_aovehicles_mode" => Array (
+		"exclude" => 1,
+		"label" => "LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode",
+		"config" => Array (
+			"type" => "select",
+			"items" => Array (
+				Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode.I.0", "0"),
+				Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode.I.1", "1"),
+				Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode.I.2", "2"),
+				Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode.I.3", "3"),
+				Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode.I.4", "4"),
+				Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode.I.5", "5"),
+				Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.tx_aovehicles_mode.I.6", "6"),
+			),
+		)
+	),
+);
+
+t3lib_div::loadTCA("tt_content");
+t3lib_extMgm::addTCAcolumns("tt_content",$tempColumns,1);
+
 
 t3lib_div::loadTCA("tt_content");
 $TCA["tt_content"]["types"]["list"]["subtypes_excludelist"][$_EXTKEY."_pi1"]="layout,select_key";
+$TCA["tt_content"]["types"]["list"]["subtypes_addlist"][$_EXTKEY."_pi1"]="tx_aovehicles_mode;;;;1-1-1";
 
 
 t3lib_extMgm::addPlugin(Array("LLL:EXT:ao_vehicles/locallang_db.php:tt_content.list_type_pi1", $_EXTKEY."_pi1"),"list_type");

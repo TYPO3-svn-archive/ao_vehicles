@@ -252,3 +252,12 @@ CREATE TABLE tx_aovehicles_equipment (
 	PRIMARY KEY (uid),
 	KEY parent (pid)
 );
+
+
+
+#
+# Table structure for table 'tt_content'
+#
+CREATE TABLE tt_content (
+	tx_aovehicles_mode tinyint(3) unsigned DEFAULT '0' NOT NULL
+);

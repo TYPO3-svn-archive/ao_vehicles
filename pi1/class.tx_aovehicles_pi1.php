@@ -57,8 +57,10 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 		}
 		// Debugging information
 		if ( DEBUG ){
+			//$GLOBALS['TYPO3_DB']->debugOutput = TRUE;
 			//debug ( $this->conf );
 			//debug ( $this->piVars );
+			//debug ( $this->internal );
 			//debug ( str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') ) );
 		}
 		return $out;
@@ -73,6 +75,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 		$this->pi_loadLL();		// Loading the LOCAL_LANG values
 		//$this->pi_USER_INT_obj=1;	// Configuring so caching is not expected. This value means that no cHash params are ever set. We do this, because it's a USER_INT object!
 		$lConf = $this->conf["listView."];	// Local settings for the listView function
+		$this->piVars['filter'] = $this->cObj->data['tx_aovehicles_mode'];
 
 		if ($this->piVars["showUid"]) {	// If a single element should be displayed:
 			$this->internal["currentTable"] = "tx_aovehicles_vehicles";
@@ -144,20 +147,26 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 			$content = $this->singleView($content,$conf);
 			return $content;
 		} else {
-			$items=array(
-				"1"=> $this->pi_getLL("list_mode_1","Mode 1"),
-				"2"=> $this->pi_getLL("list_mode_2","Mode 2"),
-				"3"=> $this->pi_getLL("list_mode_3","Mode 3"),
-			);
 			if (!isset($this->piVars["pointer"])) $this->piVars["pointer"]=0;
-			if (!isset($this->piVars["mode"])) $this->piVars["mode"]=1;
+			if (!isset($this->piVars["filter"])) $this->piVars["filter"]=0;
 
 			// Initializing the query parameters:
 			list($this->internal["orderBy"],$this->internal["descFlag"]) = explode(":",$this->piVars["sort"]);
 			$this->internal["results_at_a_time"]=t3lib_div::intInRange($lConf["results_at_a_time"],0,1000,3);		// Number of results to show in a listing.
-			$this->internal["maxPages"]=t3lib_div::intInRange($lConf["maxPages"],0,1000,2);;		// The maximum number of "pages" in the browse-box: "Page 1", "Page 2", etc.
+			$this->internal["maxPages"]=t3lib_div::intInRange($lConf["maxPages"],0,1000,2);		// The maximum number of "pages" in the browse-box: "Page 1", "Page 2", etc.
 			$this->internal["searchFieldList"]="model,price,mileage,cubic_capacity,power,notes,contact";
-			$this->internal["orderByList"]="uid,model,price,mileage,cubic_capacity,power";
+			if ( empty ( $this->piVars['sort'] ) ){
+				$this->internal['orderByList'] = 'a.tstamp DESC';
+			}else{
+				if ( $this->internal['descFlag'] ) {
+					$descFlag = 'DESC';
+				} else {
+					$descFlag = 'ASC';
+				}
+				$this->internal['orderByList'] = sprintf ( '%s %s', $this->internal['orderBy'], $descFlag );
+			}
+
+			$this->internal['limit'] = sprintf ( '%s,%s', $this->internal['results_at_a_time'] * $this->piVars['pointer'], ( $this->internal['results_at_a_time'] * $this->piVars['pointer'] ) + ( $this->internal['results_at_a_time'] - 1 ) );
 
 			// Get number of records:
 			$res = $this->pi_exec_query("tx_aovehicles_vehicles",1);
@@ -201,22 +210,49 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 									tx_aovehicles_fuel i,
 									tx_aovehicles_seats j
 									';
-			$queryParts['WHERE'] = sprintf (
-									'a.type = b.uid AND
-									a.brand = c.uid AND
-									a.body = d.uid AND
-									a.gears = e.uid AND
-									a.doors = f.uid AND
-									a.colour = g.uid AND
-									a.gear_shift = h.uid AND
-									a.fuel = i.uid AND
-									a.seats = j.uid
-									%s',
-									str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') )
-									);
+			if ( $this->piVars['filter'] == 0 ) {
+				$queryParts['WHERE'] = sprintf (
+										'a.type = b.uid AND
+										a.brand = c.uid AND
+										a.body = d.uid AND
+										a.gears = e.uid AND
+										a.doors = f.uid AND
+										a.colour = g.uid AND
+										a.gear_shift = h.uid AND
+										a.fuel = i.uid AND
+										a.seats = j.uid
+										%s',
+										str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') )
+										);
+			}else{
+				$queryParts['WHERE'] = sprintf (
+										'a.type = %s AND
+										a.type = b.uid AND
+										a.brand = c.uid AND
+										a.body = d.uid AND
+										a.gears = e.uid AND
+										a.doors = f.uid AND
+										a.colour = g.uid AND
+										a.gear_shift = h.uid AND
+										a.fuel = i.uid AND
+										a.seats = j.uid
+										%s',
+										$this->piVars['filter'],
+										str_replace ( 'tx_aovehicles_vehicles', 'a', $this->cObj->enableFields('tx_aovehicles_vehicles') )
+										);
+			}
 			$queryParts['GROUPBY'] = '';
-			$queryParts['ORDERBY'] = 'a.tstamp ASC';
-			$queryParts['LIMIT'] = '';
+			$queryParts['ORDERBY'] = $this->internal['orderByList'];
+			$queryParts['LIMIT'] = $this->internal['limit'];
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+														$queryParts['SELECT'],
+														$queryParts['FROM'],
+														$queryParts['WHERE'],
+														$queryParts['GROUPBY'],
+														$queryParts['ORDERBY'],
+														''
+													);
+			$this->internal["res_count"] = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 														$queryParts['SELECT'],
 														$queryParts['FROM'],
@@ -226,13 +262,8 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 														$queryParts['LIMIT']
 													);
 			$this->internal["currentTable"] = "tx_aovehicles_vehicles";
-			$this->internal["res_count"] = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
 				// Put the whole list together:
 			$fullTable="";	// Clear var;
-			//$fullTable.=t3lib_div::view_array($this->piVars);	// DEBUG: Output the content of $this->piVars for debug purposes. REMEMBER to comment out the IP-lock in the debug() function in t3lib/config_default.php if nothing happens when you un-comment this line!
-
-			// Adds the mode selector.
-			// $fullTable.=$this->pi_list_modeSelector($items);
 
 			// Adds the whole list table
 			if ( $this->internal['res_count'] > 0 ) {
@@ -244,7 +275,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 			// $fullTable.=$this->pi_list_searchBox();
 
 			// Adds the result browser:
-			// $fullTable.=$this->pi_list_browseresults();
+			$fullTable.=$this->pi_list_browseresults();
 
 			// Returns the content from the plugin.
 			return $fullTable;
@@ -255,9 +286,27 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 	 */
 	function makelist($res) {
 		$items=Array();
+		$listItems=Array();
+
+		// Make table header
+		$listItems[] = $this->cObj->stdWrap ( $this->getFieldHeader ( 'type' ), $this->conf['listView.']['headDataWrap1.'] );
+		$listItems[] = $this->cObj->stdWrap ( $this->getFieldHeader_sortLink ( 'brand' ), $this->conf['listView.']['headDataWrap1.'] );
+		$listItems[] = $this->cObj->stdWrap ( $this->getFieldHeader_sortLink ( 'model' ), $this->conf['listView.']['headDataWrap1.'] );
+		$listItems[] = $this->cObj->stdWrap ( $this->getFieldHeader_sortLink ( 'mileage' ), $this->conf['listView.']['headDataWrap1.'] );
+		$listItems[] = $this->cObj->stdWrap ( $this->getFieldHeader_sortLink ( 'price' ), $this->conf['listView.']['headDataWrap1.'] );
+		$listItems[] = $this->cObj->stdWrap ( $this->getFieldHeader_sortLink ( 'initial_registration' ), $this->conf['listView.']['headDataWrap1.'] );
+
+		$items[] = $this->cObj->stdWrap ( implode( chr ( 10 ),$listItems ), $this->conf['listView.']['headWrap.'] );
+
 		// Make list table rows
+		$i = 1;
 		while($this->internal["currentRow"] = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			$items[]=$this->makeListItem();
+			if ( $i % 2 ){
+				$items[]=$this->makeListItem( 'rowWrap1.' );
+			}else{
+				$items[]=$this->makeListItem( 'rowWrap2.' );
+			}
+			$i++;
 		}
 
 		$out = sprintf ('
@@ -273,17 +322,18 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 	/**
 	 * [Put your description here]
 	 */
-	function makeListItem() {
+	function makeListItem( $rowWrap ) {
 		$out = '';
 		$this->templateCode = $this->cObj->fileResource ( $this->conf['templateFile'] );
 		$template = $this->cObj->getSubpart ( $this->templateCode, '###LIST_VIEW###' );
 		$markerArray = array();
-		$markerArray['###type###']		= $this->cObj->stdWrap ( $this->getFieldContent ( 'type' ), $this->conf['listView.']['cellDataWrap.'] );
-		$markerArray['###brand###']		= $this->cObj->stdWrap ($this->getFieldContent ( 'brand' ), $this->conf['listView.']['cellDataWrap.'] );
-		$markerArray['###model###']		= $this->cObj->stdWrap ($this->getFieldContent ( 'model' ), $this->conf['listView.']['cellDataWrap.'] );
-		$markerArray['###mileage###']	= $this->cObj->stdWrap ($this->getFieldContent ( 'mileage' ), $this->conf['listView.']['cellDataWrap.'] );
-		$markerArray['###price###']		= $this->cObj->stdWrap ($this->getFieldContent ( 'price' ), $this->conf['listView.']['cellDataWrap.'] );
-		$out = $this->cObj->stdWrap ($this->cObj->substituteMarkerArrayCached ( $template, $markerArray ), $this->conf['listView.']['rowWrap.'] );
+		$markerArray['###type###']						= $this->cObj->stdWrap ( $this->getFieldContent ( 'type' ), $this->conf['listView.']['cellDataWrap1.'] );
+		$markerArray['###brand###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'brand' ), $this->conf['listView.']['cellDataWrap1.'] );
+		$markerArray['###model###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'model' ), $this->conf['listView.']['cellDataWrap1.'] );
+		$markerArray['###mileage###']					= $this->cObj->stdWrap ($this->getFieldContent ( 'mileage' ), $this->conf['listView.']['cellDataWrap3.'] );
+		$markerArray['###price###']						= $this->cObj->stdWrap ($this->getFieldContent ( 'price' ), $this->conf['listView.']['cellDataWrap3.'] );
+		$markerArray['###initial_registration###']		= $this->cObj->stdWrap ($this->getFieldContent ( 'initial_registration' ), $this->conf['listView.']['cellDataWrap2.'] );
+		$out = $this->cObj->stdWrap ($this->cObj->substituteMarkerArrayCached ( $template, $markerArray ), $this->conf['listView.'][$rowWrap] );
 		return $out;
 	}
 	/**
@@ -293,7 +343,7 @@ class tx_aovehicles_pi1 extends tslib_pibase {
 		$this->conf=$conf;
 		$this->pi_setPiVarDefaults();
 		$this->pi_loadLL();
-		$this->pi_USER_INT_obj=1;	// Configuring so caching is not expected. This value means that no cHash params are ever set. We do this, because it's a USER_INT object!
+		//$this->pi_USER_INT_obj=1;	// Configuring so caching is not expected. This value means that no cHash params are ever set. We do this, because it's a USER_INT object!
 
 			// This sets the title of the page for use in indexed search results:
 		if ($this->internal["currentRow"]["title"])	$GLOBALS["TSFE"]->indexedDocTitle=$this->internal["currentRow"]["title"];

@@ -15,7 +15,7 @@ plugin.tx_aovehicles_pi1 {
 	#
 	common {
 		currencyWrap.wrap = | &nbsp;&#8364;
-		cubicCapacityWrap.wrap = | &nbsp;cm³
+		cubicCapacityWrap.wrap = | &nbsp;cm&#179;
 		powerWrapKW.wrap = | &nbsp;KW
 		powerWrapPS.wrap = &nbsp;( | &nbsp;PS)
 		mileageWrap.wrap = | &nbsp;Km
@@ -28,9 +28,14 @@ plugin.tx_aovehicles_pi1 {
 		results_at_a_time = 50
 		maxPages = 10
 		titleWrap.wrap = <h2>|</h2>
-		resultWrap.wrap = <table cellspacing="2" cellpadding="2" border="0" class="listView">|</table>
-		rowWrap.wrap = <tr align="left" valign="top" class="odd">|</tr>
-		cellDataWrap.wrap = <td>|</td>
+		resultWrap.wrap = <table cellspacing="2" cellpadding="2" border="0" class="listView" summary="">|</table>
+		rowWrap1.wrap = <tr align="left" valign="top" class="odd">|</tr>
+		rowWrap2.wrap = <tr align="left" valign="top" class="even">|</tr>
+		headWrap.wrap = <tr align="left" valign="top" class="head">|</tr>
+		headDataWrap1.wrap = <th>|</th>
+		cellDataWrap1.wrap = <td>|</td>
+		cellDataWrap2.wrap = <td align="center">|</td>
+		cellDataWrap3.wrap = <td align="right">|</td>
 	}
 
 	# Single view settings
@@ -40,9 +45,9 @@ plugin.tx_aovehicles_pi1 {
 		maxPages = 10
 		backLinkWrap.wrap = <p>|</p>
 		titleWrap.wrap = <h2>|</h2>
-		resultWrap.wrap = <table cellspacing="2" cellpadding="2" border="0" class="singleView">|</table>
+		resultWrap.wrap = <table cellspacing="2" cellpadding="2" border="0" class="singleView" summary="">|</table>
 		rowWrap.wrap = <tr align="left" valign="top" class="odd">|</tr>
-		cellHeadWrap.wrap = <td class="cellHeadWrap">|</td>
+		cellHeadWrap.wrap = <th class="cellHeadWrap" align="left">|</th>
 		cellDataWrap.wrap = <td class="cellDataWrap">|</td>
 	}
 
