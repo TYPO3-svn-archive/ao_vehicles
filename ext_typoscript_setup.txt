@@ -1,0 +1,65 @@
+# $Id$
+# Loading AO Vehicles
+#
+plugin.tx_aovehicles_pi1 {
+
+	# Template file
+	#
+	templateFile = {$plugin.tx_aovehicles_pi1.TEMPLATEFILE}
+
+	# Storage PID
+	#
+	pidList = {$plugin.tx_aovehicles_pi1.STORAGEPID}
+
+	# Common wraps
+	#
+	common {
+		currencyWrap.wrap = | &nbsp;&#8364;
+		cubicCapacityWrap.wrap = | &nbsp;cm³
+		powerWrap.wrap = | &nbsp;Kw
+		mileageWrap.wrap = | &nbsp;Km
+	}
+
+	# List view settings
+	#
+	listView {
+		results_at_a_time = 50
+		maxPages = 10
+		titleWrap.wrap = <h2>|</h2>
+		resultWrap.wrap = <table cellspacing="2" cellpadding="2" border="0" class="listView">|</table>
+		rowWrap.wrap = <tr align="left" valign="top" class="odd">|</tr>
+		cellDataWrap.wrap = <td>|</td>
+	}
+
+	# Single view settings
+	#
+	singleView {
+		results_at_a_time = 50
+		maxPages = 10
+		backLinkWrap.wrap = <p>|</p>
+		titleWrap.wrap = <h2>|</h2>
+		resultWrap.wrap = <table cellspacing="2" cellpadding="2" border="0" class="singleView">|</table>
+		rowWrap.wrap = <tr align="left" valign="top" class="odd">|</tr>
+		cellHeadWrap.wrap = <td class="cellHeadWrap">|</td>
+		cellDataWrap.wrap = <td class="cellDataWrap">|</td>
+	}
+
+	# vehicleImageCObject settings
+	#
+	vehicleImageCObject {
+		file.width = 200
+		#altText.data = field:uid
+		#titleText.data = field:uid
+		imageLinkWrap = 1
+		imageLinkWrap {
+			enable = 1
+			bodyTag = <body bgcolor="#000000">
+			wrap = <a href="javascript:close();">|</a>
+			width = 600m
+			height = 400
+			JSwindow = 1
+			JSwindow.newWindow = 1
+			JSwindow.expand = 17,20
+		}
+	}
+}

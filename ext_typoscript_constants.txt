@@ -1,0 +1,9 @@
+# $Id$
+# cat=plugin.aovehicles; type=string; label=Template file: The path and name of the template file you wish to use. Default: EXT:ao_vehicles/pi1/aovehicles_template.html.
+plugin.tx_aovehicles_pi1.TEMPLATEFILE = EXT:ao_vehicles/pi1/aovehicles_template.html
+
+# cat=plugin.aovehicles; type=int; label=Storage PID: The PID of the page where all the data is stored. Default: empty.
+plugin.tx_aovehicles_pi1.STORAGEPID =
+
+# cat=plugin.aovehicles; type=int; label=Image width: The width of the vehicle image. Default: 200.
+plugin.tx_aovehicles_pi1.IMAGEWIDTH = 200
