@@ -48,6 +48,7 @@ $LOCAL_LANG = Array (
 		"tx_aovehicles_seats" => "Seats",
 		"tx_aovehicles_seats.seats" => "Seats",
 		"tx_aovehicles_equipment" => "Equipment",
+		"tt_content.list_type_pi1" => "AO Vehicles",
 	),
 	"de" => Array (
 		"tx_aovehicles_vehicles" => "Fahrzeuge",
